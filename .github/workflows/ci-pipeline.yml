@@ -2,56 +2,64 @@ name: CI - Build, Test, SonarCloud
 
 on:
   pull_request:
-    branches: [develop]  # Runs only on PRs targeting the 'develop' branch
+    branches: [develop]  # Trigger only for PRs targeting 'develop'
 
 jobs:
   build-test-sonar:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the source code from the PR
+      # 1. Checkout the source code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up Node.js (version 22) and enable caching for faster builds
+      # 2. Use Node.js 22 and enable npm caching
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
 
-      # 3. Install dependencies using npm clean install (ci = clean install from package-lock.json)
+      # 3. Install project dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 4. Build the Angular app using the default "production" configuration
+      # 4. Build the Angular app (uses default 'production' config)
       - name: Build Angular app
         run: npm run build
 
-      # 5. Run unit tests using the Angular 'ci' configuration (headless, coverage enabled, no watch mode)
+      # 5. Run tests using Angular's 'ci' configuration (headless + coverage)
       - name: Run unit tests with Karma
         run: ng test --configuration=ci
 
-      # 6. Run SonarCloud analysis with the test coverage report and source info
-      - name: Upload test coverage to SonarCloud
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # 6. Fail if test coverage file is missing
+      - name: Ensure coverage file exists
         run: |
-          npx sonar-scanner \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.sources=src \
-            -Dsonar.tests=src \
-            -Dsonar.inclusions=src/**/* \
-            -Dsonar.test.inclusions=**/*.spec.ts \
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          if [ ! -f coverage/lcov.info ]; then
+            echo "ERROR: coverage/lcov.info not found!"
+            exit 1
+          fi
 
-      # 7. Wait for the SonarCloud Quality Gate result (optional but important)
-      - name: Wait for SonarCloud Quality Gate
-        uses: SonarSource/sonarcloud-quality-gate-action@v1.1.0
+      # 7. Run SonarCloud analysis
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v5.0.0
         with:
-          scanWaitSeconds: 60
+          args: >
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.inclusions=src/**
+            -Dsonar.test.inclusions=**/*.spec.ts
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+
+      # 8. Enforce SonarCloud Quality Gate
+      - name: Wait for SonarCloud Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
+        with:
+          pollingTimeoutSec: 600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
