@@ -38,9 +38,6 @@ module.exports = function (config) {
 					lines: 80,
 				},
 			},
-			instrumenterOptions: {
-				istanbul: { exclude: ['src/main.ts', 'src/environments/**/*.ts'] },
-			},
 		},
 		reporters: ['progress', 'kjhtml'],
 		browsers: ['ChromeHeadless'],
