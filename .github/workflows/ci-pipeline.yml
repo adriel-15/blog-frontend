@@ -30,7 +30,7 @@ jobs:
 
       # 5. Run unit tests using the Angular 'ci' configuration (headless, coverage enabled, no watch mode)
       - name: Run unit tests with Karma
-        run: ng test --configuration=ci
+        run: npm run test:ci
 
       # 6. Run SonarCloud analysis with the test coverage report and source info
       - name: Upload test coverage to SonarCloud
