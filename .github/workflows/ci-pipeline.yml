@@ -1,0 +1,57 @@
+name: CI - Build, Test, SonarCloud
+
+on:
+  pull_request:
+    branches: [develop]  # Runs only on PRs targeting the 'develop' branch
+
+jobs:
+  build-test-sonar:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the source code from the PR
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js (version 22) and enable caching for faster builds
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      # 3. Install dependencies using npm clean install (ci = clean install from package-lock.json)
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build the Angular app using the default "production" configuration
+      - name: Build Angular app
+        run: npm run build
+
+      # 5. Run unit tests using the Angular 'ci' configuration (headless, coverage enabled, no watch mode)
+      - name: Run unit tests with Karma
+        run: ng test --configuration=ci
+
+      # 6. Run SonarCloud analysis with the test coverage report and source info
+      - name: Upload test coverage to SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          npx sonar-scanner \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+            -Dsonar.sources=src \
+            -Dsonar.tests=src \
+            -Dsonar.inclusions=src/**/* \
+            -Dsonar.test.inclusions=**/*.spec.ts \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      # 7. Wait for the SonarCloud Quality Gate result (optional but important)
+      - name: Wait for SonarCloud Quality Gate
+        uses: SonarSource/sonarcloud-quality-gate-action@v1.1.0
+        with:
+          scanWaitSeconds: 60
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
