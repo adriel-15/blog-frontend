@@ -39,6 +39,6 @@ jobs:
       # 6. Deploy to S3
       - name: Sync dist folder to S3
         run: |
-          aws s3 sync dist/ blog-frontend/ s3://${{ secrets.AWS_S3_BUCKET }} \
+          aws s3 sync dist/blog-frontend/ s3://${{ secrets.AWS_S3_BUCKET }} \
             --delete \
             --acl public-read
