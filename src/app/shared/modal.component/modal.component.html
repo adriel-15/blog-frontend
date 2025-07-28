@@ -1,0 +1,5 @@
+<div class="modal-backdrop" (click)="closed.emit()">
+	<div class="modal-content" (click)="$event.stopPropagation()">
+		<ng-content></ng-content>
+	</div>
+</div>
