@@ -17,9 +17,9 @@ export class NavComponent {
 	isLoginModalOpen = signal(false);
 
 	constructor(
-		private elRef: ElementRef,
+		private readonly elRef: ElementRef,
 		public userState: UserStateService,
-		private loginService: LoginService,
+		private readonly loginService: LoginService,
 	) {}
 
 	logout() {

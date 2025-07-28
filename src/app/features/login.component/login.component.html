@@ -4,7 +4,7 @@
 	<div class="item2">
 		<p>LOGIN</p>
 		<div *ngIf="isLoginFailOpen()">
-			{{this.LoginFailMessage()}}
+			{{ this.LoginFailMessage() }}
 			<span (click)="this.isLoginFailOpen.set(false)">&#9746;</span>
 		</div>
 	</div>
@@ -66,6 +66,4 @@
 		<img src="/google-logo.png" alt="google-logo" />
 		<a>Login with google</a>
 	</div>
-
-	<!-- <button type="button" (click)="close()">Cancel</button> -->
 </form>

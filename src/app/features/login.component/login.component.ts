@@ -23,8 +23,8 @@ export class LoginComponent {
 	LoginFailMessage = signal('');
 
 	constructor(
-		private loginService: LoginService,
-		private fb: FormBuilder,
+		private readonly loginService: LoginService,
+		private readonly fb: FormBuilder,
 	) {
 		this.form = this.fb.group({
 			username: ['', Validators.required],

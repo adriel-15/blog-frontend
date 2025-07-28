@@ -15,8 +15,8 @@ export class LoginService {
 	private readonly loginUrl = `${environment.apiBaseUrl}/login`;
 
 	constructor(
-		private http: HttpClient,
-		private userState: UserStateService,
+		private readonly http: HttpClient,
+		private readonly userState: UserStateService,
 	) {}
 
 	login(username: string, password: string) {

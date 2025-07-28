@@ -6,11 +6,11 @@ import { JwtService } from '../../util/jwt/jwt.service';
 	providedIn: 'root',
 })
 export class UserStateService {
-	private _user = signal<User | null>(null);
+	private readonly _user = signal<User | null>(null);
 	readonly user = this._user.asReadonly();
 	readonly isLoggedIn = computed(() => !!this._user());
 
-	constructor(private jwtService: JwtService) {}
+	constructor(private readonly jwtService: JwtService) {}
 
 	setUserFromToken(token: string) {
 		const claims = this.jwtService.decode(token);
