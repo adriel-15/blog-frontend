@@ -1,0 +1,62 @@
+<nav>
+	<div class="nav-container">
+		<!-- Hamburger icon -->
+		<div
+			*ngIf="userState.isLoggedIn()"
+			(click)="toggleMenu()"
+			class="menu-toggle"
+		>
+			&#9776;
+		</div>
+
+		<div class="nav-container-left">
+			<img
+				class="nav-logo"
+				src="/arblog-transparent-logo.png"
+				alt="page-logo"
+			/>
+
+			<div class="nav-container-left-options" [class.open]="isMenuOpen()">
+				<a *ngIf="userState.hasRole('ROLE_READER')" class="menu-option"
+					>Saved Posts</a
+				>
+				<a *ngIf="userState.hasRole('ROLE_WRITER')" class="menu-option"
+					>My Posts</a
+				>
+				<a *ngIf="userState.hasRole('ROLE_ADMIN')" class="menu-option"
+					>Manage Application</a
+				>
+			</div>
+		</div>
+
+		<div class="nav-container-right">
+			<div
+				*ngIf="userState.isLoggedIn()"
+				(click)="toggleProfileMenu()"
+				class="profile-container"
+			>
+				<p>{{ userState.getInitials() }}</p>
+			</div>
+
+			<div
+				*ngIf="userState.isLoggedIn()"
+				class="profile-container-options"
+				[class.open]="isProfileMenuOpen()"
+			>
+				<a class="menu-option">Account Profile</a>
+				<a class="menu-option" id="sign-out" (click)="logout()">Sign out</a>
+			</div>
+
+			<a
+				*ngIf="!userState.isLoggedIn()"
+				class="btn btn-primary"
+				(click)="isLoginModalOpen.set(true)"
+				>Log in</a
+			>
+		</div>
+	</div>
+</nav>
+
+<app-modal *ngIf="isLoginModalOpen()" (closed)="isLoginModalOpen.set(false)">
+	<app-login (closed)="isLoginModalOpen.set(false)"></app-login>
+</app-modal>
