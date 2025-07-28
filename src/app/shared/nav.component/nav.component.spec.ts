@@ -2,15 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NavComponent } from './nav.component';
 import { LoginService } from '../../core/services/api/login/login.service';
 import { UserStateService } from '../../core/services/state/user/user-state.service';
-import { ElementRef, signal } from '@angular/core';
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-
-class MockElementRef {
-	constructor(private inside: boolean) {}
-	nativeElement = {
-		contains: () => this.inside,
-	};
-}
 
 describe('NavComponent', () => {
 	let component: NavComponent;
@@ -36,7 +29,6 @@ describe('NavComponent', () => {
 			providers: [
 				{ provide: LoginService, useValue: loginServiceSpy },
 				{ provide: UserStateService, useValue: userStateStub },
-				{ provide: ElementRef, useValue: new MockElementRef(false) }, // default = click outside
 			],
 		}).compileComponents();
 
@@ -83,28 +75,6 @@ describe('NavComponent', () => {
 		expect(loginEl).toBeTruthy(); // Login is inside modal
 	});
 
-	it('should close menus when clicking outside component', () => {
-		// override mock ElementRef to simulate outside click
-		component['elRef'] = new MockElementRef(false) as ElementRef;
-		spyOn(component, 'closeMenus');
-
-		const fakeEvent = new MouseEvent('click');
-		component.handleClickOutside(fakeEvent);
-
-		expect(component.closeMenus).toHaveBeenCalled();
-	});
-
-	it('should not close menus when clicking inside component', () => {
-		// override mock ElementRef to simulate inside click
-		component['elRef'] = new MockElementRef(true) as ElementRef;
-		spyOn(component, 'closeMenus');
-
-		const fakeEvent = new MouseEvent('click');
-		component.handleClickOutside(fakeEvent);
-
-		expect(component.closeMenus).not.toHaveBeenCalled();
-	});
-
 	it('should show correct menu options based on roles', () => {
 		fixture.detectChanges();
 		const options = fixture.debugElement.queryAll(By.css('.menu-option'));
@@ -139,5 +109,48 @@ describe('NavComponent', () => {
 		);
 		expect(loginButton).toBeTruthy();
 		expect(loginButton.nativeElement.textContent.trim()).toBe('Log in');
+	});
+
+	it('should close menus when clicking outside component', () => {
+		spyOn(component, 'closeMenus');
+
+		// Create a click event with target outside the component nativeElement
+		const outsideElement = document.createElement('div');
+		document.body.appendChild(outsideElement); // attach to DOM to be realistic
+
+		const event = new MouseEvent('click', {
+			bubbles: true,
+			cancelable: true,
+		});
+		Object.defineProperty(event, 'target', { value: outsideElement });
+
+		component.handleClickOutside(event);
+
+		expect(component.closeMenus).toHaveBeenCalled();
+
+		document.body.removeChild(outsideElement); // cleanup
+	});
+
+	it('should not close menus when clicking inside component', () => {
+		spyOn(component, 'closeMenus');
+
+		const nativeElement = component['elRef'].nativeElement as HTMLElement;
+
+		// Create a child element inside the nativeElement
+		const insideElement = document.createElement('div');
+		nativeElement.appendChild(insideElement);
+
+		// Create a click event with target inside the component nativeElement
+		const event = new MouseEvent('click', {
+			bubbles: true,
+			cancelable: true,
+		});
+		Object.defineProperty(event, 'target', { value: insideElement });
+
+		component.handleClickOutside(event);
+
+		expect(component.closeMenus).not.toHaveBeenCalled();
+
+		nativeElement.removeChild(insideElement); // cleanup
 	});
 });
