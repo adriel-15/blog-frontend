@@ -1,0 +1,71 @@
+<form class="form-grid-container" [formGroup]="form" (ngSubmit)="submit()">
+	<img src="/arblog-transparent-logo.png" alt="arblog-logo" class="item1" />
+
+	<div class="item2">
+		<p>LOGIN</p>
+		<div *ngIf="isLoginFailOpen()">
+			{{this.LoginFailMessage()}}
+			<span (click)="this.isLoginFailOpen.set(false)">&#9746;</span>
+		</div>
+	</div>
+
+	<div class="item3">
+		<p>Username</p>
+		<input
+			type="text"
+			formControlName="username"
+			(click)="this.isLoginFailOpen.set(false)"
+		/>
+		<div
+			class="item3-last-element"
+			[class.active]="
+				form.get('username')?.invalid && form.get('username')?.touched
+			"
+		>
+			username is required
+		</div>
+	</div>
+
+	<div class="item4">
+		<div class="item4-first-element">
+			<p>Password</p>
+			<a>Forgot password?</a>
+		</div>
+
+		<input
+			type="password"
+			formControlName="password"
+			(click)="this.isLoginFailOpen.set(false)"
+		/>
+		<div
+			class="item4-last-element"
+			[class.active]="
+				form.get('password')?.invalid && form.get('password')?.touched
+			"
+		>
+			Password is required.
+		</div>
+	</div>
+
+	<div class="item5">
+		<button
+			type="submit"
+			[disabled]="form.invalid"
+			class="item5-button"
+			[class.active]="!form.invalid"
+		>
+			Login
+		</button>
+
+		<span>Don't have an account? <a>Sign Up</a></span>
+
+		<hr />
+	</div>
+
+	<div class="item6">
+		<img src="/google-logo.png" alt="google-logo" />
+		<a>Login with google</a>
+	</div>
+
+	<!-- <button type="button" (click)="close()">Cancel</button> -->
+</form>

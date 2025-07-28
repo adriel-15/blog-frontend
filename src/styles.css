@@ -1,1 +1,137 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+	/* FONT SIZE */
+	--text-sm: 1.2rem;
+	--text-base: 1.6rem;
+	--text-paragraph: 2rem;
+	--text-h5: 2.4rem;
+	--text-h4: 3.2rem;
+	--text-h3: 4rem;
+	--text-h2: 4.8rem;
+	--text-h1: 6.2rem;
+
+	/* FONT WEIGHT */
+	--font-weight-normal: 400;
+	--font-weight-bold: 700;
+
+	/* LINE HEIGHT */
+	--line-height-tight: 1.2;
+	--line-height-normal: 1.5;
+
+	/* LETTER SPACING */
+	--letter-spacing-tight: -2px;
+
+	/* FONT FAMILY */
+	--font-family: 'Poppins', sans-serif;
+
+	/* COLORS */
+	--primary-base: #1a4d78;
+	--primary-tint: #7694ae;
+	--primary-shade: #102e48;
+
+	--secundary-base: #845ef7;
+	--secundary-tint: #cebffc;
+	--secundary-shade: #352663;
+
+	--terciary-base: #fd7e14;
+	--terciary-tint: #febf8a;
+	--terciary-sahde: #7f3f0a;
+
+	--gray-base: #e7eaed;
+	--gray-tint: #f3f5f6;
+	--gray-shade: #747577;
+
+	--white: #ffffff;
+	--black: #000000;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	font-size: 62.5%;
+}
+
+body {
+	font-family: var(--font-family);
+	font-weight: var(--font-weight-normal);
+	line-height: var(--line-height-normal);
+	color: var(--gray-base);
+}
+
+h1 {
+	font-size: var(--text-h1);
+}
+
+h2 {
+	font-size: var(--text-h2);
+}
+
+h3 {
+	font-size: var(--text-h3);
+}
+
+h4 {
+	font-size: var(--text-h4);
+}
+
+h5 {
+	font-size: var(--text-h5);
+}
+
+p {
+	font-size: var(--text-paragraph);
+}
+
+a {
+	text-decoration: none;
+	font-size: var(--text-base);
+	display: inline-block;
+}
+
+.small-text {
+	font-size: var(--text-sm);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+	font-weight: var(--font-weight-bold);
+	line-height: var(--line-height-tight);
+	letter-spacing: -2px;
+	color: var(--primary-base);
+}
+
+.btn {
+	cursor: pointer;
+	font-size: var(--text-sm);
+	font-family: var(--font-family);
+	text-decoration: none;
+	padding: 0.5rem 2rem;
+	border-radius: 8px;
+}
+
+.btn-primary {
+	color: var(--white);
+	background-color: var(--primary-base);
+	border: 2px solid var(--primary-base);
+}
+
+.btn-primary:hover,
+.btn-primary:active {
+	color: var(--white);
+	background-color: var(--secundary-base);
+	border: 2px solid var(--secundary-base);
+}
+
+/* desktop and up */
+@media (min-width: 1024px) {
+	.btn {
+		font-size: var(--text-base);
+	}
+}
