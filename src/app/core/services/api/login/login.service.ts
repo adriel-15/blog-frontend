@@ -13,6 +13,7 @@ export interface JwtDto {
 })
 export class LoginService {
 	private readonly loginUrl = `${environment.apiBaseUrl}/login`;
+	private readonly googleLoginUrl = `${environment.apiBaseUrl}/google`;
 
 	constructor(
 		private readonly http: HttpClient,
@@ -42,6 +43,29 @@ export class LoginService {
 				}));
 			}),
 		);
+	}
+
+	googleLogin(googleToken: string) {
+		return this.http
+			.post<JwtDto>(this.googleLoginUrl, { googleAccessToken: googleToken })
+			.pipe(
+				tap((res) => {
+					this.userState.setUserFromToken(res.token);
+				}),
+				catchError((error) => {
+					const status = error.status;
+
+					const message =
+						error.status !== 0
+							? 'Google login failed'
+							: 'System down, try again later :(';
+
+					return throwError(() => ({
+						status,
+						message,
+					}));
+				}),
+			);
 	}
 
 	logout() {
