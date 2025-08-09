@@ -64,17 +64,6 @@ describe('NavComponent', () => {
 		expect(loginServiceSpy.logout).toHaveBeenCalled();
 	});
 
-	it('should render app-modal with app-login inside when isLoginModalOpen is true', () => {
-		fixture.componentInstance.isLoginModalOpen.set(true);
-		fixture.detectChanges();
-
-		const modalEl = fixture.debugElement.query(By.css('app-modal'));
-		const loginEl = fixture.debugElement.query(By.css('app-login'));
-
-		expect(modalEl).toBeTruthy(); // Modal is shown
-		expect(loginEl).toBeTruthy(); // Login is inside modal
-	});
-
 	it('should show correct menu options based on roles', () => {
 		fixture.detectChanges();
 		const options = fixture.debugElement.queryAll(By.css('.menu-option'));

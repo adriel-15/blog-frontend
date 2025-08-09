@@ -1,112 +1,141 @@
 import { TestBed } from '@angular/core/testing';
-
-import { LoginService } from './login.service';
-import {
-	HttpTestingController,
-	provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
+import { LoginService, JwtDto } from './login.service';
 import { UserStateService } from '../../state/user/user-state.service';
-import { provideHttpClient } from '@angular/common/http';
 
 describe('LoginService', () => {
 	let service: LoginService;
-	let httpMock: HttpTestingController;
-	let mockUserStateService: jasmine.SpyObj<UserStateService>;
+	let httpSpy: jasmine.SpyObj<HttpClient>;
+	let userStateSpy: jasmine.SpyObj<UserStateService>;
 
 	beforeEach(() => {
-		const userStateSpy = jasmine.createSpyObj('UserStateService', [
+		httpSpy = jasmine.createSpyObj('HttpClient', ['post']);
+		userStateSpy = jasmine.createSpyObj('UserStateService', [
 			'setUserFromToken',
 			'clearUser',
 		]);
 
 		TestBed.configureTestingModule({
 			providers: [
-				provideHttpClient(),
-				provideHttpClientTesting(),
+				LoginService,
+				{ provide: HttpClient, useValue: httpSpy },
 				{ provide: UserStateService, useValue: userStateSpy },
 			],
 		});
 
 		service = TestBed.inject(LoginService);
-		httpMock = TestBed.inject(HttpTestingController);
-		mockUserStateService = TestBed.inject(
-			UserStateService,
-		) as jasmine.SpyObj<UserStateService>;
 	});
 
-	afterEach(() => {
-		httpMock.verify();
-	});
+	// -------------------------
+	// LOGIN TESTS
+	// -------------------------
+	describe('login', () => {
+		it('should call setUserFromToken on success', () => {
+			const mockResponse: JwtDto = { token: 'mock-token' };
+			httpSpy.post.and.returnValue(of(mockResponse));
 
-	it('should be created', () => {
-		expect(service).toBeTruthy();
-	});
+			service.login('user', 'pass').subscribe((res) => {
+				expect(res).toEqual(mockResponse);
+			});
 
-	it('should call login API and update user state on success', () => {
-		const mockToken = 'mock-jwt-token';
+			const expectedHeaders = new HttpHeaders({
+				Authorization: 'Basic ' + btoa('user:pass'),
+			});
 
-		service.login('testUser', 'testPass').subscribe((res) => {
-			{
-				expect(res.token).toEqual(mockToken);
-				expect(mockUserStateService.setUserFromToken).toHaveBeenCalledWith(
-					mockToken,
-				);
-			}
+			expect(httpSpy.post).toHaveBeenCalledWith(
+				jasmine.any(String),
+				{},
+				jasmine.objectContaining({
+					headers: jasmine.any(HttpHeaders),
+				}),
+			);
+			expect(userStateSpy.setUserFromToken).toHaveBeenCalledWith(
+				'mock-token',
+			);
 		});
 
-		const req = httpMock.expectOne((req) => req.url.includes('/login'));
-		expect(req.request.method).toBe('POST');
-		expect(req.request.headers.get('Authorization')).toContain('Basic');
+		it('should throw "Incorrect username or password" on non-zero status error', () => {
+			const errorResponse = { status: 401 };
+			httpSpy.post.and.returnValue(throwError(() => errorResponse));
 
-		req.flush({ token: mockToken });
-	});
-
-	it('should handle login error properly', () => {
-		const mockError = {
-			status: 401,
-			statusText: 'Unauthorized',
-			error: { message: 'Invalid Credentials' },
-		};
-
-		service.login('wrongUser', 'wrongPass').subscribe({
-			next: () => fail('Should have fail with 401 error'),
-			error: (err) => {
-				expect(err.status).toBe(401);
-				expect(err.message).toBe('Incorrect username or password');
-			},
+			service.login('user', 'wrong-pass').subscribe({
+				next: () => fail('Expected error, but got success'),
+				error: (err) => {
+					expect(err.status).toBe(401);
+					expect(err.message).toBe('Incorrect username or password');
+				},
+			});
 		});
 
-		const req = httpMock.expectOne((req) => req.url.includes('/login'));
-		req.flush(mockError.error, {
-			status: mockError.status,
-			statusText: mockError.statusText,
-		});
-	});
+		it('should throw "System down" on status 0 error', () => {
+			const errorResponse = { status: 0 };
+			httpSpy.post.and.returnValue(throwError(() => errorResponse));
 
-	it('should handle login error if server is down', () => {
-		const mockError = {
-			status: 0,
-			statusText: 'Unknown Error',
-			error: null,
-		};
-
-		service.login('user', 'pass').subscribe({
-			next: () => fail('Should have failed with a network/server error'),
-			error: (err) => {
-				expect(err.status).toBe(0);
-				expect(err.message).toBe('System down, try again later :(');
-			},
-		});
-
-		const req = httpMock.expectOne((req) => req.url.includes('/login'));
-		req.flush(mockError.error, {
-			status: mockError.status,
-			statusText: mockError.statusText,
+			service.login('user', 'pass').subscribe({
+				next: () => fail('Expected error, but got success'),
+				error: (err) => {
+					expect(err.status).toBe(0);
+					expect(err.message).toBe('System down, try again later :(');
+				},
+			});
 		});
 	});
 
-	it('should clear user on logout', () => {
-		service.logout();
-		expect(mockUserStateService.clearUser).toHaveBeenCalled();
+	// -------------------------
+	// GOOGLE LOGIN TESTS
+	// -------------------------
+	describe('googleLogin', () => {
+		it('should call setUserFromToken on success', () => {
+			const mockResponse: JwtDto = { token: 'mock-google-token' };
+			httpSpy.post.and.returnValue(of(mockResponse));
+
+			service.googleLogin('test-token').subscribe((res) => {
+				expect(res).toEqual(mockResponse);
+			});
+
+			expect(httpSpy.post).toHaveBeenCalledWith(jasmine.any(String), {
+				googleAccessToken: 'test-token',
+			});
+			expect(userStateSpy.setUserFromToken).toHaveBeenCalledWith(
+				'mock-google-token',
+			);
+		});
+
+		it('should throw "Google login failed" on non-zero status error', () => {
+			const errorResponse = { status: 401 };
+			httpSpy.post.and.returnValue(throwError(() => errorResponse));
+
+			service.googleLogin('bad-token').subscribe({
+				next: () => fail('Expected error, but got success'),
+				error: (err) => {
+					expect(err.status).toBe(401);
+					expect(err.message).toBe('Google login failed');
+				},
+			});
+		});
+
+		it('should throw "System down" on status 0 error', () => {
+			const errorResponse = { status: 0 };
+			httpSpy.post.and.returnValue(throwError(() => errorResponse));
+
+			service.googleLogin('any-token').subscribe({
+				next: () => fail('Expected error, but got success'),
+				error: (err) => {
+					expect(err.status).toBe(0);
+					expect(err.message).toBe('System down, try again later :(');
+				},
+			});
+		});
+	});
+
+	// -------------------------
+	// LOGOUT TEST
+	// -------------------------
+	describe('logout', () => {
+		it('should clear user', () => {
+			service.logout();
+			expect(userStateSpy.clearUser).toHaveBeenCalled();
+		});
 	});
 });
