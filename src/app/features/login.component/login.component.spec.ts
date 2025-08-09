@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { of, throwError } from 'rxjs';
 import { LoginComponent } from './login.component';
 import { LoginService } from '../../core/services/api/login/login.service';
+import { environment } from '../../../environments/environment';
 
 interface FakeTokenClient {
 	requestAccessToken: jasmine.Spy;
@@ -14,6 +15,7 @@ describe('LoginComponent', () => {
 	let fixture: ComponentFixture<LoginComponent>;
 	let loginServiceSpy: jasmine.SpyObj<LoginService>;
 	let tokenClientSpy: FakeTokenClient;
+	let originalEnvironment: typeof environment;
 
 	beforeEach(async () => {
 		loginServiceSpy = jasmine.createSpyObj<LoginService>('LoginService', [
@@ -38,6 +40,9 @@ describe('LoginComponent', () => {
 			},
 		};
 
+		// Save original environment
+		originalEnvironment = { ...environment };
+
 		await TestBed.configureTestingModule({
 			imports: [ReactiveFormsModule, LoginComponent],
 			providers: [
@@ -49,6 +54,11 @@ describe('LoginComponent', () => {
 		fixture = TestBed.createComponent(LoginComponent);
 		component = fixture.componentInstance;
 		fixture.detectChanges();
+	});
+
+	afterEach(() => {
+		// Restore original environment after each test
+		Object.assign(environment, originalEnvironment);
 	});
 
 	it('should create component', () => {
@@ -125,6 +135,108 @@ describe('LoginComponent', () => {
 		tokenClientSpy.__callback?.({ access_token: 'cb_token' });
 		expect(component.handleGoogleCredential).toHaveBeenCalledWith({
 			access_token: 'cb_token',
+		});
+	});
+
+	describe('console logging behavior', () => {
+		let consoleSpy: jasmine.Spy;
+
+		beforeEach(() => {
+			consoleSpy = spyOn(console, 'log');
+		});
+
+		describe('when in development mode (!production)', () => {
+			beforeEach(() => {
+				environment.production = false;
+			});
+
+			it('should log success message on successful login', () => {
+				component.form.setValue({ username: 'test', password: 'pass' });
+				loginServiceSpy.login.and.returnValue(of({ token: 'mock-token' }));
+
+				component.submit();
+
+				expect(consoleSpy).toHaveBeenCalledWith('Logged in!');
+			});
+
+			it('should log error on failed login', () => {
+				component.form.setValue({ username: 'test', password: 'pass' });
+				const error = { message: 'Error' };
+				loginServiceSpy.login.and.returnValue(throwError(() => error));
+
+				component.submit();
+
+				expect(consoleSpy).toHaveBeenCalledWith(error);
+			});
+
+			it('should log Google access token on credential handling', () => {
+				const response = { access_token: 'abc123' };
+				loginServiceSpy.googleLogin.and.returnValue(
+					of({ token: 'mock-token' }),
+				);
+
+				component.handleGoogleCredential(response);
+
+				expect(consoleSpy).toHaveBeenCalledWith({
+					googleAccessToken: 'abc123',
+				});
+			});
+
+			it('should log success message on successful Google login', () => {
+				loginServiceSpy.googleLogin.and.returnValue(
+					of({ token: 'mock-token' }),
+				);
+
+				component.handleGoogleCredential({ access_token: 'abc123' });
+
+				expect(consoleSpy).toHaveBeenCalledWith('Google login successful');
+			});
+		});
+
+		describe('when in production mode', () => {
+			beforeEach(() => {
+				environment.production = true;
+			});
+
+			it('should not log success message on successful login', () => {
+				component.form.setValue({ username: 'test', password: 'pass' });
+				loginServiceSpy.login.and.returnValue(of({ token: 'mock-token' }));
+
+				component.submit();
+
+				expect(consoleSpy).not.toHaveBeenCalled();
+			});
+
+			it('should not log error on failed login', () => {
+				component.form.setValue({ username: 'test', password: 'pass' });
+				loginServiceSpy.login.and.returnValue(
+					throwError(() => ({ message: 'Error' })),
+				);
+
+				component.submit();
+
+				expect(consoleSpy).not.toHaveBeenCalled();
+			});
+
+			it('should not log Google access token on credential handling', () => {
+				loginServiceSpy.googleLogin.and.returnValue(
+					of({ token: 'mock-token' }),
+				);
+
+				component.handleGoogleCredential({ access_token: 'abc123' });
+
+				expect(consoleSpy).not.toHaveBeenCalled();
+			});
+
+			it('should not log success message on successful Google login', () => {
+				loginServiceSpy.googleLogin.and.returnValue(
+					of({ token: 'mock-token' }),
+				);
+
+				component.handleGoogleCredential({ access_token: 'abc123' });
+
+				expect(consoleSpy).not.toHaveBeenCalled();
+			});
 		});
 	});
 });
